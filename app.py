@@ -60,24 +60,23 @@ def launch_phantom(api_key: str, phantom_id: str) -> bool:
     url = "https://api.phantombuster.com/api/v2/agents/launch"
     headers = {
         "Content-Type": "application/json",
-        "x-phantombuster-key": api_key  # matches your curl
+        "x-phantombuster-key": api_key
     }
-    payload = {"id": phantom_id}
+    data = f'{{"id":"{phantom_id}"}}'
 
     try:
-        r = requests.post(url, headers=headers, json=payload, timeout=30)
+        r = requests.post(url, headers=headers, data=data, timeout=30)
         if r.status_code == 200:
-            data = r.json()
-            if data.get("status") == "success":
+            resp = r.json()
+            if resp.get("status") == "success":
                 return True
             else:
-                log(f"⚠ Launch API responded but not success: {data}")
+                log(f"⚠ Launch response: {resp}")
         else:
             log(f" Launch failed (HTTP {r.status_code}): {r.text[:200]}")
-        return False
     except requests.RequestException as e:
         log(f" Error launching phantom: {e}")
-        return False
+    return False
 
 
 # ==============================
