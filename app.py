@@ -67,10 +67,10 @@ def launch_phantom(api_key: str, phantom_id: str) -> bool:
         if r.status_code == 200:
             return True
         else:
-            log(f"⚠️ Launch failed (HTTP {r.status_code}): {r.text[:200]}")
+            log(f" Launch failed (HTTP {r.status_code}): {r.text[:200]}")
             return False
     except requests.RequestException as e:
-        log(f"❌ Error launching phantom: {e}")
+        log(f" Error launching phantom: {e}")
         return False
 
 # ==============================
@@ -78,7 +78,7 @@ def launch_phantom(api_key: str, phantom_id: str) -> bool:
 # ==============================
 
 def automation_loop(api_key: str, phantom_id: str, run_count: int, poll_seconds: int, idle_only: bool):
-    log("🚀 Automation thread started.")
+    log(" Automation thread started.")
     try:
         while not st.session_state.stop_flag and st.session_state.activations_done < run_count:
             status = get_phantom_status(api_key, phantom_id)
@@ -91,25 +91,25 @@ def automation_loop(api_key: str, phantom_id: str, run_count: int, poll_seconds:
             if idle_only:
                 if status != "running":
                     next_idx = st.session_state.activations_done + 1
-                    log(f"▶️ Launching Phantom (activation {next_idx}/{run_count}) — status currently '{status}'.")
+                    log(f"▶Launching Phantom (activation {next_idx}/{run_count}) — status currently '{status}'.")
                     ok = launch_phantom(api_key, phantom_id)
                     if ok:
                         st.session_state.activations_done += 1
-                        log("✅ Launch requested successfully.")
+                        log("Launch requested successfully.")
                     else:
-                        log("❌ Launch request failed.")
+                        log(" Launch request failed.")
                 else:
-                    log("⏳ Phantom is running. Waiting...")
+                    log(" Phantom is running. Waiting...")
             else:
                 # Always try launching up to run_count times (regardless of status)
                 next_idx = st.session_state.activations_done + 1
-                log(f"▶️ Launching Phantom (activation {next_idx}/{run_count}) — status '{status}'.")
+                log(f"▶ Launching Phantom (activation {next_idx}/{run_count}) — status '{status}'.")
                 ok = launch_phantom(api_key, phantom_id)
                 if ok:
                     st.session_state.activations_done += 1
-                    log("✅ Launch requested successfully.")
+                    log(" Launch requested successfully.")
                 else:
-                    log("❌ Launch request failed.")
+                    log(" Launch request failed.")
 
             # Sleep between polls to avoid rate limits and busy-looping
             slept = 0
@@ -118,24 +118,24 @@ def automation_loop(api_key: str, phantom_id: str, run_count: int, poll_seconds:
                 slept += 1
 
     except Exception as e:
-        log(f"💥 Unexpected error in automation loop: {e}")
+        log(f" Unexpected error in automation loop: {e}")
     finally:
         st.session_state.is_running = False
         st.session_state.thread = None
-        log("🛑 Automation thread stopped.")
+        log("Automation thread stopped.")
 
 # ==============================
 # UI
 # ==============================
 
-st.set_page_config(page_title="Phantom Auto-Activator", page_icon="🪄", layout="wide")
+st.set_page_config(page_title="Phantom Auto-Activator", layout="wide")
 init_state()
 
-st.title("🪄 Phantom Auto-Activator")
+st.title(" Phantom Auto-Activator")
 st.caption("Launch your Phantom repeatedly without schedules — it re-launches when inactive, up to N times.")
 
 with st.sidebar:
-    st.header("⚙️ Settings")
+    st.header("⚙ Settings")
     # Try to get API key from secrets first, else ask user
     secret_api = get_secret("PHANTOMBUSTER_API_KEY")
     api_key_input = st.text_input("PhantomBuster API Key", value=secret_api or "", type="password", help="You can also add this to Streamlit Cloud Secrets as PHANTOMBUSTER_API_KEY")
@@ -146,25 +146,25 @@ with st.sidebar:
 
     colA, colB = st.columns(2)
     with colA:
-        start_btn = st.button("▶️ Start", type="primary", use_container_width=True)
+        start_btn = st.button("▶Start", type="primary", use_container_width=True)
     with colB:
-        stop_btn = st.button("🛑 Stop", use_container_width=True)
+        stop_btn = st.button("Stop", use_container_width=True)
 
-    clear_btn = st.button("🧹 Clear Logs", help="Clear in-memory logs.")
+    clear_btn = st.button(" Clear Logs", help="Clear in-memory logs.")
 
 # Handle actions
 if clear_btn:
     st.session_state.logs = []
     st.session_state.activations_done = 0
-    log("🧹 Logs cleared.")
+    log(" Logs cleared.")
 
 if stop_btn and st.session_state.is_running:
     st.session_state.stop_flag = True
-    log("🛑 Stop requested.")
+    log("Stop requested.")
 
 if start_btn:
     if st.session_state.is_running:
-        log("ℹ️ Already running.")
+        log("Already running.")
     else:
         if not api_key_input or not phantom_id:
             st.error("Please provide API Key and Phantom ID to start.")
@@ -182,15 +182,15 @@ if start_btn:
             )
             st.session_state.thread = t
             t.start()
-            log("🔄 Automation started.")
+            log("Automation started.")
 
 # Main area
 left, right = st.columns([2, 1])
 with left:
-    st.subheader("📜 Live Logs")
+    st.subheader(" Live Logs")
     st.write("\n".join(st.session_state.logs) or "No logs yet.")
     st.download_button(
-        "⬇️ Download logs",
+        "Download logs",
         data="\n".join(st.session_state.logs).encode("utf-8"),
         file_name=f"phantom_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
         mime="text/plain",
@@ -198,7 +198,7 @@ with left:
     )
 
 with right:
-    st.subheader("📊 Progress")
+    st.subheader("Progress")
     st.metric("Activations done", value=st.session_state.activations_done)
     st.progress(min(st.session_state.activations_done / max(1, int(run_count)), 1.0))
     status_placeholder = st.empty()
@@ -213,11 +213,4 @@ with right:
     st.code(status or "unknown", language="text")
 
 st.divider()
-st.markdown(
-    """
-**Tips**
-- Add your `PHANTOMBUSTER_API_KEY` (and optional `PHANTOM_ID`) to **Streamlit Cloud → App settings → Secrets** so you don't have to type them each time.
-- Keep `Only launch when inactive` ON to match your desired behavior precisely.
-- Increase the `Check interval` if you see rate limit errors.
-"""
-)
+
