@@ -50,28 +50,35 @@ def get_phantom_status(api_key: str, phantom_id: str) -> Optional[str]:
             data = r.json()
             return data.get("data", {}).get("status")
         else:
-            log(f"⚠️ Failed to fetch status (HTTP {r.status_code}): {r.text[:200]}")
+            log(f"⚠ Failed to fetch status (HTTP {r.status_code}): {r.text[:200]}")
             return None
     except requests.RequestException as e:
-        log(f"❌ Error fetching status: {e}")
+        log(f" Error fetching status: {e}")
         return None
 
 def launch_phantom(api_key: str, phantom_id: str) -> bool:
-    url = f"https://api.phantombuster.com/api/v2/agents/launch?id={phantom_id}"
+    url = "https://api.phantombuster.com/api/v2/agents/launch"
     headers = {
-        "X-Phantombuster-Key-1": api_key,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "x-phantombuster-key": api_key  # matches your curl
     }
+    payload = {"id": phantom_id}
+
     try:
-        r = requests.post(url, headers=headers, timeout=30)
+        r = requests.post(url, headers=headers, json=payload, timeout=30)
         if r.status_code == 200:
-            return True
+            data = r.json()
+            if data.get("status") == "success":
+                return True
+            else:
+                log(f"⚠ Launch API responded but not success: {data}")
         else:
             log(f" Launch failed (HTTP {r.status_code}): {r.text[:200]}")
-            return False
+        return False
     except requests.RequestException as e:
         log(f" Error launching phantom: {e}")
         return False
+
 
 # ==============================
 # Automation Logic (in a thread)
